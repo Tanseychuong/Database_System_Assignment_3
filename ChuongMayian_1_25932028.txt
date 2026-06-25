@@ -1,0 +1,183 @@
+MariaDB [(none)]> create database CompanyXdb
+    -> ;
+Query OK, 1 row affected (0.001 sec)
+
+MariaDB [CompanyXdb]> create table Employee(
+    -> empNo int primary key,
+    -> fName varchar(30),
+    -> lName varchar(30),
+    -> address varchar(50),
+    -> sex enum('M','F'),
+    -> position  enum('Manager','Team Leader','Analyst','Software Developer'),
+    -> deptNo int
+    -> foreign key (deptNo) references Department(deptNo);
+Query OK, 0 rows affected (0.014 sec)
+
+
+MariaDB [CompanyXdb]> create table Department (
+    ->     deptNo int PRIMARY KEY,
+    ->     deptName VARCHAR(60),
+    ->     mrgEmpNo INT
+    -> );
+Query OK, 0 rows affected (0.012 sec)
+
+
+MariaDB [CompanyXdb]> create table Project(
+    -> projNo int primary key,
+    -> projName varchar(60),
+    -> deptNo int,
+    -> foreign key(deptNo) references Department(deptNo));
+Query OK, 0 rows affected (0.012 sec)
+
+MariaDB [CompanyXdb]> create table WorksOn(
+    -> empNo int,
+    -> projNo int,
+    -> dateWorked date,
+    -> hoursWorked varchar(5),
+    -> primary key(empNo,projNo,dateWorked));
+Query OK, 0 rows affected (0.029 sec)
+
+
+MariaDB [CompanyXdb]> CREATE VIEW project_by_female AS 
+    -> SELECT Project.*, Employee.fName, Employee.lName, Employee.sex
+    -> FROM Project
+    -> INNER JOIN Employee ON Project.deptNo = Employee.deptNo
+    -> WHERE Employee.sex = 'F';
+Query OK, 0 rows affected (0.013 sec)
+
+MariaDB [CompanyXdb]> create view emp_contr as
+    -> select e.empNo, e.fName,e.lName,p.projNo,p.projName,w.hoursWorked
+    -> from Employee e, Project p, WorksOn w
+    -> where e.empNo = w.empNo and p.projNo = w.projNo;
+Query OK, 0 rows affected (0.026 sec)
+
+MariaDB [CompanyXdb]> INSERT INTO Department (deptNo, deptName, mrgEmpNo) VALUES
+    -> (10, 'Human Resources', 101),
+    -> (20, 'Research & Development', 103),
+    -> (30, 'Information Technology', 105);
+Query OK, 3 rows affected (0.005 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+
+MariaDB [CompanyXdb]> INSERT INTO Employee (empNo, fName, lName, address, sex, position, deptNo) VALUES
+    -> (101, 'Alice', 'Smith', '123 Maple St', 'F', 'Manager', 10),
+    -> (102, 'Bob', 'Jones', '456 Oak Rd', 'M', 'Team Leader', 10),
+    -> (103, 'Charlie', 'Brown', '789 Pine Ave', 'M', 'Manager', 20),
+    -> (104, 'Diana', 'Prince', '101 Bay Rd', 'F', 'Software Developer', 20),
+    -> (105, 'Evan', 'Wright', '202 Elm St', 'M', 'Manager', 30),
+    -> (106, 'Fiona', 'Gallagher', '303 Cedar Ln', 'F', 'Analyst', 30),
+    -> (107, 'George', 'Clark', '404 Birch Dr', 'M', 'Software Developer', 30),
+    -> (108, 'Hannah', 'Abbott', '505 Spruce St', 'F', 'Software Developer', 30),
+    -> (109, 'Ian', 'Malcolm', '606 Willow Way', 'M', 'Analyst', 20),
+    -> (110, 'Julia', 'Roberts', '707 Ash Blvd', 'F', 'Team Leader', 20);
+Query OK, 10 rows affected (0.006 sec)
+Records: 10  Duplicates: 0  Warnings: 0
+
+
+MariaDB [CompanyXdb]> INSERT INTO Project (projNo, projName, deptNo) VALUES 
+    -> (501, 'SCCS', 30),
+    -> (502, 'Alpha Bio-Tech', 20),
+    -> (503, 'Talent Acquisition Plan', 10),
+    -> (504, 'Cloud Migration', 30);
+Query OK, 4 rows affected (0.024 sec)
+Records: 4  Duplicates: 0  Warnings: 0
+
+
+MariaDB [CompanyXdb]> INSERT INTO WorksOn (empNo, projNo, dateWorked, hoursWorked) VALUES
+    -> (101, 503, '2026-01-15', 40),
+    -> (102, 503, '2026-01-16', 35),
+    -> (103, 502, '2026-02-01', 40), 
+    -> (104, 502, '2026-02-02', 40), 
+    -> (105, 501, '2026-03-10', 20),
+    -> (105, 504, '2026-03-11', 25),
+    -> (106, 501, '2026-03-12', 38),
+    -> (107, 504, '2026-03-15', 40),
+    -> (108, 501, '2026-03-16', 30),
+    -> (110, 502, '2026-02-10', 15);
+Query OK, 10 rows affected (0.023 sec)
+Records: 10  Duplicates: 0  Warnings: 0
+
+
+MariaDB [CompanyXdb]> select * from emp_contr;
++-------+---------+-----------+--------+-------------------------+-------------+
+| empNo | fName   | lName     | projNo | projName                | hoursWorked |
++-------+---------+-----------+--------+-------------------------+-------------+
+|   101 | Alice   | Smith     |    503 | Talent Acquisition Plan |          40 |
+|   102 | Bob     | Jones     |    503 | Talent Acquisition Plan |          35 |
+|   103 | Charlie | Brown     |    502 | Alpha Bio-Tech          |          40 |
+|   104 | Diana   | Prince    |    502 | Alpha Bio-Tech          |          40 |
+|   105 | Evan    | Wright    |    501 | SCCS                    |          20 |
+|   105 | Evan    | Wright    |    504 | Cloud Migration         |          25 |
+|   106 | Fiona   | Gallagher |    501 | SCCS                    |          38 |
+|   107 | George  | Clark     |    504 | Cloud Migration         |          40 |
+|   108 | Hannah  | Abbott    |    501 | SCCS                    |          30 |
+|   110 | Julia   | Roberts   |    502 | Alpha Bio-Tech          |          15 |
++-------+---------+-----------+--------+-------------------------+-------------+
+10 rows in set (0.002 sec)
+
+
+
+MariaDB [CompanyXdb]> select projNo
+    -> from emp_contr
+    -> where projName='SCCS';
++--------+
+| projNo |
++--------+
+|    501 |
+|    501 |
+|    501 |
++--------+
+3 rows in set (0.001 sec)
+
+MariaDB [CompanyXdb]> 
+
+
+MariaDB [CompanyXdb]> select count(projNo)
+    -> from emp_contr
+    -> where empNo = 'E1';
++---------------+
+| count(projNo) |
++---------------+
+|             0 |
++---------------+
+1 row in set (0.005 sec)
+
+
+MariaDB [CompanyXdb]> select empNo,sum(hoursWorked) as totalHours
+    -> from emp_contr
+    -> group by empNo;
++-------+------------+
+| empNo | totalHours |
++-------+------------+
+|   101 |         40 |
+|   102 |         35 |
+|   103 |         40 |
+|   104 |         40 |
+|   105 |         45 |
+|   106 |         38 |
+|   107 |         40 |
+|   108 |         30 |
+|   110 |         15 |
++-------+------------+
+9 rows in set (0.003 sec)
+
+
+--A materialized view physically saves query results to disk for speed, but when the underlying data changes,it become outdated so therefore it must be updated efficiently using incremental modifications. Because the view filters for distinct part numbers (DISTINCT partNo) where the cost exceeds 1000, it can be maintained without ever accessing the base table during insertions by simply adding new parts or ignoring irrelevant ones. However, during deletions or downward price updates, the view becomes blind and does not have access if other valid contracts still exist for that part; to prevent a costly scan of the base table to check, the system must maintain a hidden derivation counter alongside each part number to safely track duplicates and manage deletions entirely within the view.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
